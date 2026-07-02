@@ -142,7 +142,7 @@ function deleteShortCut() {
     localStorage.getItem("myShortcuts", )
 }
 
-function UpdateJam() {
+function UpdateJams() {
     const monthH = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
 
     const jam = document.getElementById('jam-sekarang');
@@ -165,7 +165,7 @@ function UpdateJam() {
 }
 
 setInterval(UpdateJam, 1000);
-UpdateJam();
+UpdateJams();
 displayShortcuts();
 
 const init = () => {
@@ -245,7 +245,7 @@ const init = () => {
   const resize = () => {
     const w = innerWidth;
     const h = innerHeight;
-
+ 
     gl.camera.aspect = w / h;
     gl.renderer.setSize(w, h);
 
@@ -259,10 +259,10 @@ const init = () => {
     gl.camera.updateProjectionMatrix();
   };
 
-  addScene();
+    addScene();
   update();
   resize();
   window.addEventListener("resize", resize);
 };
-
+//github aneh
 init();
