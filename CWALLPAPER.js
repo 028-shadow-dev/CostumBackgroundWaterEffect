@@ -142,7 +142,7 @@ function deleteShortCut() {
     localStorage.getItem("myShortcuts", )
 }
 
-function UpdateJams() {
+function UpdateJam() {
     const monthH = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
 
     const jam = document.getElementById('jam-sekarang');
@@ -165,7 +165,7 @@ function UpdateJams() {
 }
 
 setInterval(UpdateJam, 1000);
-UpdateJams();
+UpdateJam();
 displayShortcuts();
 
 const init = () => {
