@@ -74,11 +74,7 @@ search_database.addEventListener('click', () => {
         let searchFInd = savedWallpaperUrl.find(item => item.nomor == userInputWallpaper);
         if (searchFInd) {
             let urlWallpaper = searchFInd.linkSave;
-            
-            // Pasang sebagai background body
-            document.body.style.backgroundImage = `url('${urlWallpaper}')`;
-            
-            // Simpan URL yang sedang aktif ini agar tidak hilang saat di-refresh
+            updateWallpaperTexture(urlWallpaper);
             localStorage.setItem('activeWallpaper', urlWallpaper);
         } else {
             alert(`Nomor ${userInputWallpaper} tidak ditemukan!`);
@@ -108,7 +104,8 @@ btn_live_walllpaper.addEventListener('click',() => {
     let linkGambar = inputWallpaper.value.trim();
 
     if (linkGambar) {
-        document.body.style.backgroundImage = `url('${linkGambar}')`;
+        updateWallpaperTexture(linkGambar);
+        localStorage.setItem('activeWallpaper', linkGambar);
     } else {
         alert("cari walpaper terlebih dahulu")
     }
@@ -168,6 +165,24 @@ setInterval(UpdateJam, 1000);
 UpdateJam();
 displayShortcuts();
 
+// Global variables untuk three.js
+let glState = null;
+
+function updateWallpaperTexture(imageUrl) {
+  if (!glState || !glState.loader) {
+    console.error("Three.js belum siap");
+    return;
+  }
+  
+  glState.loader.load(imageUrl, (texture) => {
+    glState.uniforms.texture1.value = texture;
+    console.log("Wallpaper updated with:", imageUrl);
+  }, undefined, (error) => {
+    console.error("Error loading texture:", error);
+    alert("Gagal load gambar. Pastikan URL valid.");
+  });
+}
+
 const init = () => {
   const content = document.querySelector(".content-canvas");
   const s = {
@@ -175,27 +190,23 @@ const init = () => {
     h: innerHeight
   };
 
-  const gl = {
-    renderer: new THREE.WebGLRenderer({ antialias: true, alpha: true }),
-    camera: new THREE.PerspectiveCamera(75, s.w / s.h, 0.1, 100),
-    scene: new THREE.Scene(),
-    loader: new THREE.TextureLoader()
-  };
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  const camera = new THREE.PerspectiveCamera(75, s.w / s.h, 0.1, 100);
+  const scene = new THREE.Scene();
+  const loader = new THREE.TextureLoader();
 
-  gl.renderer.setClearColor(0x000000, 0);
+  renderer.setClearColor(0x000000, 0);
+  renderer.setSize(s.w, s.h);
+  renderer.setPixelRatio(devicePixelRatio);
+  content.appendChild(renderer.domElement);
+
+  camera.position.set(0, 0, 1);
+  scene.add(camera);
 
   let time = 0;
 
-  const addScene = () => {
-    gl.camera.position.set(0, 0, 1);
-    gl.scene.add(gl.camera);
-
-    gl.renderer.setSize(s.w, s.h);
-    gl.renderer.setPixelRatio(devicePixelRatio);
-    content.appendChild(gl.renderer.domElement);
-
-    mesh();
-  };
+  // Default wallpaper
+  const activeWallpaper = localStorage.getItem('activeWallpaper') || "https://images.unsplash.com/photo-1513343041531-f73bffeed81b?ixlib=rb-1.2.1&q=85&fm=jpg&crop=entropy&cs=srgb&ixid=eyJhcHBfaWQiOjE0NTg5fQ";
 
   const uniforms = {
     time: { type: "f", value: 0 },
@@ -206,8 +217,21 @@ const init = () => {
     mouse: { type: "v2", value: new THREE.Vector2(0, 0) },
     waveLength: { type: "f", value: 1.2 },
     texture1: {
-      value: gl.loader.load("https://images.unsplash.com/photo-1513343041531-f73bffeed81b?ixlib=rb-1.2.1&q=85&fm=jpg&crop=entropy&cs=srgb&ixid=eyJhcHBfaWQiOjE0NTg5fQ")
+      value: loader.load(activeWallpaper)
     }
+  };
+
+  // Simpan state global
+  glState = {
+    renderer,
+    camera,
+    scene,
+    loader,
+    uniforms,
+    mesh: null,
+    geometry: null,
+    material: null,
+    time: 0
   };
 
   const getGeom = () => new THREE.PlaneGeometry(1, 1, 64, 64);
@@ -223,46 +247,40 @@ const init = () => {
     });
   };
 
-  const mesh = () => {
-    gl.geometry = getGeom();
-    gl.material = getMaterial();
+  glState.geometry = getGeom();
+  glState.material = getMaterial();
+  glState.mesh = new THREE.Mesh(glState.geometry, glState.material);
+  scene.add(glState.mesh);
 
-    gl.mesh = new THREE.Mesh(gl.geometry, gl.material);
-
-    gl.scene.add(gl.mesh);
-  };
+  const render = () => renderer.render(scene, camera);
 
   const update = () => {
-    time += 0.05;
-    gl.material.uniforms.time.value = time;
-
+    glState.time += 0.05;
+    glState.material.uniforms.time.value = glState.time;
     render();
     requestAnimationFrame(update);
   };
-
-  const render = () => gl.renderer.render(gl.scene, gl.camera);
 
   const resize = () => {
     const w = innerWidth;
     const h = innerHeight;
  
-    gl.camera.aspect = w / h;
-    gl.renderer.setSize(w, h);
+    camera.aspect = w / h;
+    renderer.setSize(w, h);
 
-    const dist = gl.camera.position.z - gl.mesh.position.z;
+    const dist = camera.position.z - glState.mesh.position.z;
     const height = 1;
     
-    gl.camera.fov = 2 * (180 / Math.PI) * Math.atan(height / (2 * dist));
+    camera.fov = 2 * (180 / Math.PI) * Math.atan(height / (2 * dist));
 
-    if (w / h > 1) gl.mesh.scale.x = gl.mesh.scale.y = 1.05 * w / h;
+    if (w / h > 1) glState.mesh.scale.x = glState.mesh.scale.y = 1.05 * w / h;
     
-    gl.camera.updateProjectionMatrix();
+    camera.updateProjectionMatrix();
   };
 
-    addScene();
   update();
   resize();
   window.addEventListener("resize", resize);
 };
-//github aneh
+
 init();
