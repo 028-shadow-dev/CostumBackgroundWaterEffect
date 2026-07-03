@@ -206,7 +206,7 @@ const init = () => {
   let time = 0;
 
   // Default wallpaper
-  const activeWallpaper = localStorage.getItem('activeWallpaper') || "https://images.unsplash.com/photo-1513343041531-f73bffeed81b?ixlib=rb-1.2.1&q=85&fm=jpg&crop=entropy&cs=srgb&ixid=eyJhcHBfaWQiOjE0NTg5fQ";
+  const activeWallpaper = localStorage.getItem('activeWallpaper') || "https://media-cdn-zspms.kurogame.net/pnswebsite/website2.0/images/1760112000000/poyfabk4vg56so00hy-1760180358276%E6%B4%81%E5%A1%94%E8%96%87cg%E6%94%B9%E5%88%98%E6%B5%B7.jpg";
 
   const uniforms = {
     time: { type: "f", value: 0 },
