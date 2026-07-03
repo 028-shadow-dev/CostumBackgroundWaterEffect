@@ -174,12 +174,25 @@ function updateWallpaperTexture(imageUrl) {
     return;
   }
   
-  glState.loader.load(imageUrl, (texture) => {
+  // Gunakan CORS proxy untuk bypass CORS restriction
+  const corsProxy = "https://cors-anywhere.herokuapp.com/";
+  const urlToLoad = imageUrl;
+  
+  glState.loader.crossOrigin = 'anonymous';
+  glState.loader.load(urlToLoad, (texture) => {
     glState.uniforms.texture1.value = texture;
     console.log("Wallpaper updated with:", imageUrl);
   }, undefined, (error) => {
     console.error("Error loading texture:", error);
-    alert("Gagal load gambar. Pastikan URL valid.");
+    // Coba dengan CORS proxy jika gagal
+    console.log("Trying with CORS proxy...");
+    glState.loader.load(corsProxy + imageUrl, (texture) => {
+      glState.uniforms.texture1.value = texture;
+      console.log("Wallpaper updated with CORS proxy:", imageUrl);
+    }, undefined, (error2) => {
+      console.error("Error dengan CORS proxy:", error2);
+      alert("Gagal load gambar. Link mungkin invalid atau tidak support cross-origin. Coba link lain!");
+    });
   });
 }
 
@@ -221,7 +234,6 @@ const init = () => {
     }
   };
 
-  // Simpan state global
   glState = {
     renderer,
     camera,
